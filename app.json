@@ -4,47 +4,42 @@
     "slug": "flashcard-quiz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/quiz.png",
+    "icon": "./assets/images/QuizIcon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "sdkVersion": "53.0.0",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/QuizIcon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.flashcardquiz"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/quiz.png",
+        "foregroundImage": "./assets/images/QuizIcon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.flashcardquiz"
+      "package": "com.apoorvsingh.flashcardquiz"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/QuizIcon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/quiz.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
+      "expo-splash-screen"
     ],
-    "experiments": {
-      "typedRoutes": true
-    },
+    "experiments": {},
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7867348b-7eac-4ffd-aec2-f7b82bffcfa6"
+        "projectId": "62076b4d-eb1c-42c3-a17b-fdf17d98c372"
       }
-    }
+    },
+    "owner": "apoorvsingh"
   }
 }

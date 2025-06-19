@@ -46,7 +46,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     return (
         <View style={styles.container}>
             {/* Header Section */}
-            <View style={styles.header}>
+            <View style={[styles.header, { marginTop: 40 }]}>
                 <Text style={styles.title}>Flashcard Quiz</Text>
                 <Text style={styles.subtitle}>Test your knowledge!</Text>
             </View>

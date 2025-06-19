@@ -1,13 +1,19 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Button, ScrollView, TextInput } from 'react-native';
 import { useEffect, useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const initialFlashcards = [
+interface Flashcard {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
+const initialFlashcards: Flashcard[] = [
   {
     question: "What is the capital of France?",
     options: ["Paris", "London", "Berlin", "Madrid"],
-    answer: "Paris"
+    answer: "Paris",
   },
   {
     question: "What is a linked list?",
@@ -15,9 +21,9 @@ const initialFlashcards = [
       "A data structure consisting of nodes, each containing data and a reference to the next node.",
       "A tree with two children per node",
       "A collection of key-value pairs",
-      "A FIFO data structure"
+      "A FIFO data structure",
     ],
-    answer: "A data structure consisting of nodes, each containing data and a reference to the next node."
+    answer: "A data structure consisting of nodes, each containing data and a reference to the next node.",
   },
   {
     question: "What is a stack?",
@@ -25,9 +31,9 @@ const initialFlashcards = [
       "A data structure that follows Last-In-First-Out (LIFO) principle.",
       "A data structure that follows First-In-First-Out (FIFO) principle.",
       "A graph",
-      "A hash table"
+      "A hash table",
     ],
-    answer: "A data structure that follows Last-In-First-Out (LIFO) principle."
+    answer: "A data structure that follows Last-In-First-Out (LIFO) principle.",
   },
   {
     question: "What is a queue?",
@@ -35,9 +41,9 @@ const initialFlashcards = [
       "A data structure that follows First-In-First-Out (FIFO) principle.",
       "A data structure that follows Last-In-First-Out (LIFO) principle.",
       "A tree",
-      "A linked list"
+      "A linked list",
     ],
-    answer: "A data structure that follows First-In-First-Out (FIFO) principle."
+    answer: "A data structure that follows First-In-First-Out (FIFO) principle.",
   },
   {
     question: "What is a binary search tree?",
@@ -45,9 +51,9 @@ const initialFlashcards = [
       "A tree data structure in which each node has at most two children, and left < root < right.",
       "A hash table",
       "A queue",
-      "A graph"
+      "A graph",
     ],
-    answer: "A tree data structure in which each node has at most two children, and left < root < right."
+    answer: "A tree data structure in which each node has at most two children, and left < root < right.",
   },
   {
     question: "What is a graph?",
@@ -55,9 +61,9 @@ const initialFlashcards = [
       "A collection of nodes (vertices) and edges connecting pairs of nodes.",
       "A stack",
       "A queue",
-      "A binary tree"
+      "A binary tree",
     ],
-    answer: "A collection of nodes (vertices) and edges connecting pairs of nodes."
+    answer: "A collection of nodes (vertices) and edges connecting pairs of nodes.",
   },
   {
     question: "What is a hash table?",
@@ -65,9 +71,9 @@ const initialFlashcards = [
       "A data structure that maps keys to values for highly efficient lookup.",
       "A FIFO data structure",
       "A stack",
-      "A tree"
+      "A tree",
     ],
-    answer: "A data structure that maps keys to values for highly efficient lookup."
+    answer: "A data structure that maps keys to values for highly efficient lookup.",
   },
   {
     question: "What is an element?",
@@ -75,19 +81,19 @@ const initialFlashcards = [
       "An element is a basic unit of a data structure.",
       "A queue",
       "An array",
-      "A table"
+      "A table",
     ],
-    answer: "An element is a basic unit of a data structure."
+    answer: "An element is a basic unit of a data structure.",
   },
   {
     question: "What are the use cases of the technique BackTracking?",
     options: [
       "Solving puzzles and games (e.g., Sudoku, crossword puzzles).",
       "Generating all possible solutions to a problem (e.g., permutations, combinations).",
-      "Finding the optimal solution to a problem (e.g., the traveling salesman problem).",
-      "Solving constraint satisfaction problems (e.g., scheduling, resource allocation)."
+      "Undoing previous choices when a solution path fails (e.g., recursive backtracking in mazes).",
+      "Exploring all configurations in constraint satisfaction problems (e.g., scheduling, resource allocation).",
     ],
-    answer: "Solving puzzles and games (e.g., Sudoku, crossword puzzles)."
+    answer: "Solving puzzles and games (e.g., Sudoku, crossword puzzles).",
   },
   {
     question: "What is an Operating System?",
@@ -95,9 +101,9 @@ const initialFlashcards = [
       "An operating system is a program that manages computer hardware and software resources, providing common services for computer programs.",
       "A System that is responsible for managing computer hardware and software resources, providing common services for computer programs.",
       "A System that works on the basis of managing computer hardware and software resources, providing common services for computer programs.",
-      "An Operating system is an intermidiary between user of a computer and computer hardware."
+      "An Operating system is an intermediary between user of a computer and computer hardware.",
     ],
-    answer: "An operating system is a program that manages computer hardware and software resources, providing common services for computer programs."
+    answer: "An operating system is a program that manages computer hardware and software resources, providing common services for computer programs.",
   },
   {
     question: "What is nuclear physics?",
@@ -105,9 +111,9 @@ const initialFlashcards = [
       "The study of the structure and behavior of the nucleus of an atom.",
       "The study of the behavior of subatomic particles.",
       "The study of the behavior of electrons.",
-      "The study of the behavior of protons."
+      "The study of the behavior of protons.",
     ],
-    answer: "The study of the structure and behavior of the nucleus of an atom."
+    answer: "The study of the structure and behavior of the nucleus of an atom.",
   },
   {
     question: "What is quantum physics?",
@@ -115,21 +121,18 @@ const initialFlashcards = [
       "The study of the behavior of subatomic particles.",
       "The study of the behavior of electrons.",
       "The study of the behavior of protons.",
-      "The study of the behavior of electrons and protons."
+      "The study of the behavior of electrons and protons.",
     ],
-    answer: "The study of the behavior of subatomic particles."
+    answer: "The study of the behavior of subatomic particles.",
   },
 ];
 
-
-
-const saveFlashcards = async (newCards: { question: string; options: string[]; answer: string; }[]) => {
+const saveFlashcards = async (newCards: Flashcard[]) => {
   try {
-    const jsonValue = JSON.stringify(newCards);
-    await AsyncStorage.setItem('@flashcards_key', jsonValue);
+    console.log('Saving flashcards:', newCards);
+    await AsyncStorage.setItem('@flashcards_key', JSON.stringify(newCards));
     console.log('Flashcards saved successfully!');
   } catch (e) {
-    // saving error
     console.error('Error saving flashcards:', e);
   }
 };
@@ -139,7 +142,7 @@ const saveQuizResults = async (score: number, total: number) => {
     const results = {
       score,
       total,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     await AsyncStorage.setItem('@quiz_results', JSON.stringify(results));
   } catch (e) {
@@ -147,64 +150,67 @@ const saveQuizResults = async (score: number, total: number) => {
   }
 };
 
-function Home() {
-  const navigation = useNavigation();
-  const [flashcards, setFlashcards] = useState(initialFlashcards);
+export default function Home() {
+  const router = useRouter();
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(initialFlashcards);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [progressAnim] = useState(new Animated.Value(0));
-
-  // Add Flashcard Form State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [editQuestion, setEditQuestion] = useState('');
+  const [editOptions, setEditOptions] = useState(['', '', '', '']);
+  const [editAnswer, setEditAnswer] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState('');
   const [newOptions, setNewOptions] = useState(['', '', '', '']);
   const [newAnswer, setNewAnswer] = useState('');
+  const [userAnswers, setUserAnswers] = useState<
+    Array<{
+      question: string;
+      userAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+    }>
+  >([]);
 
-  const [userAnswers, setUserAnnswers] = useState<Array<{
-    question: String,
-    userAnswer: String,
-    correctAnswer: string,
-    isCorrect: boolean
-  }>>([]);
+  useEffect(() => {
+    const loadFlashcards = async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem('@flashcards_key');
+        if (jsonValue) {
+          const savedCards: Flashcard[] = JSON.parse(jsonValue);
+          console.log('Loaded flashcards from storage:', savedCards);
+          setFlashcards(savedCards);
+        } else {
+          console.log('No saved flashcards found, using initial set.');
+          setFlashcards(initialFlashcards);
+          saveFlashcards(initialFlashcards);
+        }
+      } catch (e) {
+        console.error('Error loading flashcards:', e);
+        setFlashcards(initialFlashcards);
+      }
+    };
+    loadFlashcards();
+  }, []);
 
-  // Move useEffect outside conditional block
   useEffect(() => {
     if (currentQuestion >= flashcards.length) {
       saveQuizResults(score, flashcards.length);
     }
   }, [currentQuestion, score, flashcards.length]);
 
-  const loadFlashcards = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('@flashcards_key');
-      if (jsonValue != null) {
-        const savedCards = JSON.parse(jsonValue);
-        setFlashcards(savedCards);
-        console.log('Flashcards loaded successfully!');
-      } else {
-        setFlashcards(initialFlashcards);
-        console.log('No saved flashcards found, using initial set.');
-      }
-    } catch (e) {
-      console.error('Error loading flashcards:', e);
-      setFlashcards(initialFlashcards);
-    }
-  };
-
-  useEffect(() => {
-    loadFlashcards();
-  }, []);
-
   useEffect(() => {
     Animated.timing(progressAnim, {
       toValue: (currentQuestion + 1) / flashcards.length,
       duration: 300,
-      useNativeDriver: false
+      useNativeDriver: false,
     }).start();
-  }, [currentQuestion]);
+  }, [currentQuestion, flashcards.length]);
 
   const handleOptionPress = (option: string) => {
     setSelectedOption(option);
@@ -212,31 +218,29 @@ function Home() {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
-      useNativeDriver: true
+      useNativeDriver: true,
     }).start();
-    if (option === flashcards[currentQuestion].answer) {
-      setScore(score + 1); // 1 point for the correct option 
-    } else {
-      setScore(score - 1); // i point penalty for wrong answer
-    }
-
-
-    setUserAnnswers([...userAnswers, {
-      question: flashcards[currentQuestion].question,
-      userAnswer: option,
-      correctAnswer: flashcards[currentQuestion].answer,
-      isCorrect: option === flashcards[currentQuestion].answer
-    }]);
+    const isCorrect = option === flashcards[currentQuestion].answer;
+    setScore(score + (isCorrect ? 1 : -1)); // +1 for correct -1 for wrong option
+    setUserAnswers([
+      ...userAnswers,
+      {
+        question: flashcards[currentQuestion].question,
+        userAnswer: option,
+        correctAnswer: flashcards[currentQuestion].answer,
+        isCorrect,
+      },
+    ]);
   };
 
   const handleNext = () => {
-    if (currentQuestion < flashcards.length - 1) {  // if current question is not the last question
+    if (currentQuestion < flashcards.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedOption(null);
       setShowResult(false);
       fadeAnim.setValue(0);
-    } else if (currentQuestion === flashcards.length - 1) { // Check if we're on the last question
-      setCurrentQuestion(currentQuestion + 1); // Move to the results screen by incrementing currentQuestion beyond the last question
+    } else {
+      setCurrentQuestion(currentQuestion + 1);
     }
   };
 
@@ -249,150 +253,298 @@ function Home() {
     }
   };
 
-  if (currentQuestion >= flashcards.length) {
-    const handleRestart = () => {
-      setCurrentQuestion(0);
-      setScore(0);
-      setSelectedOption(null);
-      setShowResult(false);
-    };
+  const startEditing = (index: number) => {
+    setEditIndex(index);
+    setEditQuestion(flashcards[index].question);
+    setEditOptions([...flashcards[index].options]);
+    setEditAnswer(flashcards[index].answer);
+    setIsEditing(true);
+  };
 
+  const saveEdit = () => {
+    if (
+      editQuestion.trim() &&
+      editOptions.every((opt) => opt.trim()) &&
+      editOptions.includes(editAnswer) &&
+      !editOptions.some((opt, i) => editOptions.indexOf(opt) !== i && opt.trim())
+    ) {
+      const updated = [...flashcards];
+      updated[editIndex!] = {
+        question: editQuestion,
+        options: editOptions,
+        answer: editAnswer,
+      };
+      setFlashcards(updated);
+      saveFlashcards(updated);
+      setIsEditing(false);
+      setEditIndex(null);
+      setEditQuestion('');
+      setEditOptions(['', '', '', '']);
+      setEditAnswer('');
+    } else {
+      alert('Please fill all fields, ensure the answer matches one option, and avoid duplicate options.');
+    }
+  };
+
+  const handleAddFlashcard = () => {
+    const hasDuplicateOptions = newOptions.some(
+      (opt, index) => newOptions.indexOf(opt) !== index && opt.trim()
+    );
+    if (
+      newQuestion.trim() &&
+      newOptions.every((opt) => opt.trim()) &&
+      newOptions.includes(newAnswer) &&
+      !hasDuplicateOptions
+    ) {
+      const newFlashcard: Flashcard = {
+        question: newQuestion,
+        options: newOptions,
+        answer: newAnswer,
+      };
+      const updatedFlashcards = [...flashcards, newFlashcard];
+      setFlashcards(updatedFlashcards);
+      saveFlashcards(updatedFlashcards);
+      setNewQuestion('');
+      setNewOptions(['', '', '', '']);
+      setNewAnswer('');
+      setShowAddForm(false);
+    } else {
+      const errorMessage = hasDuplicateOptions
+        ? 'Options cannot contain duplicates.'
+        : 'Please fill all fields and ensure the answer matches one option.';
+      alert(errorMessage);
+    }
+  };
+
+  const handleRestart = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setSelectedOption(null);
+    setShowResult(false);
+    setUserAnswers([]);
+    fadeAnim.setValue(0);
+  };
+
+  if (currentQuestion >= flashcards.length) {
     return (
-      <View style={style.container}>
-        <Text style={style.text}>You have completed the quiz!</Text>
-        <Text style={style.scoreText}>Your score is {score} / {flashcards.length}</Text>
-        <View style={style.buttonRow}>
-          <Button title="Restart" onPress={handleRestart} />
+      <View style={styles.container}>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={[styles.text, { fontSize: 24, fontWeight: 'bold', marginBottom: 20 }]}>
+            {'\n'}
+            Quiz Completed!
+          </Text>
+          <Text style={[styles.scoreText, { fontSize: 20, marginBottom: 20 }]}>
+            Final Score: {score} / {flashcards.length}
+          </Text>
+          <ScrollView style={{ width: '100%', marginBottom: 20 }}>
+            {userAnswers.map((answer, idx) => (
+              <View key={idx} style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+                <Text style={styles.text}>Q: {answer.question}</Text>
+                <Text style={styles.text}>
+                  Your Answer: {answer.userAnswer} {answer.isCorrect ? '✓' : '✗'}
+                </Text>
+                {!answer.isCorrect && (
+                  <Text style={styles.text}>Correct Answer: {answer.correctAnswer}</Text>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.nextButton, { backgroundColor: '#5b9df9', paddingHorizontal: 20 }]}
+            onPress={handleRestart}
+          >
+            <Text style={styles.nextButtonText}>Restart Quiz</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.nextButton, { backgroundColor: '#2196F3', marginTop: 10 }]}
+            onPress={() => router.push('/welcome')}
+          >
+            <Text style={styles.nextButtonText}>Back to Welcome</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   }
-  const progress = (currentQuestion + 1) / flashcards.length;
+
   return (
-    <View style={style.container}>
-      {/* Progress Bar */}
-      <View style={style.progressBarBg}>
-        <View style={[style.progressBarFill, { width: `${progress * 100}%` }]} />
-      </View>
-      {/* Question and Options */}
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.header} onPress={() => router.push('/welcome')}>
+        <Text style={styles.headerTitle}>Flashcard Quiz</Text>
+      </TouchableOpacity>
+      <Animated.View
+        style={[
+          styles.progressBarBg,
+          {
+            transform: [
+              {
+                scaleX: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <View style={styles.progressBarFill} />
+      </Animated.View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }} showsVerticalScrollIndicator={false}>
-        <View style={style.questionContainer}>
-          <Text style={style.question}>{flashcards[currentQuestion].question}</Text>
+        <View style={styles.questionContainer}>
+          <Text style={styles.question}>
+            {currentQuestion + 1}. {flashcards[currentQuestion].question}
+          </Text>
+          <TouchableOpacity
+            onPress={() => startEditing(currentQuestion)}
+            style={{ alignSelf: 'flex-start', marginVertical: 8 }}
+          >
+            <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>Edit</Text>
+          </TouchableOpacity>
           {flashcards[currentQuestion].options.map((option, idx) => {
             const isCorrect = showResult && option === flashcards[currentQuestion].answer;
             const isSelected = selectedOption === option;
             return (
               <TouchableOpacity
                 key={idx}
-                style={[style.optionButton,
-                isCorrect ? style.optionCorrect : isSelected && showResult ? style.optionIncorrect : style.optionButton,
+                style={[
+                  styles.optionButton,
+                  isCorrect ? styles.optionCorrect : isSelected && showResult ? styles.optionIncorrect : null,
                 ]}
                 activeOpacity={0.8}
                 onPress={() => !showResult && handleOptionPress(option)}
                 disabled={showResult}
               >
-                <Text style={style.optionText}>{option}</Text>
-                {showResult && isCorrect && <Text style={style.icon}>✓</Text>}
-                {showResult && isSelected && !isCorrect && <Text style={style.icon}>✗</Text>}
+                <Text style={styles.optionText}>{option}</Text>
+                {showResult && isCorrect && <Text style={styles.icon}>✓</Text>}
+                {showResult && isSelected && !isCorrect && <Text style={styles.icon}>✗</Text>}
               </TouchableOpacity>
             );
           })}
           {showResult && (
             <Animated.View style={{ opacity: fadeAnim }}>
-              <Text style={style.feedbackText}>
+              <Text style={styles.feedbackText}>
                 {selectedOption === flashcards[currentQuestion].answer ? 'Correct!' : 'Wrong!'}
               </Text>
             </Animated.View>
           )}
           {showResult && (
-            <View style={style.buttonRow}>
+            <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[style.nextButton, { backgroundColor: currentQuestion === 0 ? '#cfd8dc' : '#5b9df9' }]}
+                style={[styles.nextButton, { backgroundColor: currentQuestion === 0 ? '#cfd8dc' : '#5b9df9' }]}
                 onPress={handlePrev}
                 disabled={currentQuestion === 0}
               >
-                <Text style={style.nextButtonText}>Previous</Text>
+                <Text style={styles.nextButtonText}>Previous</Text>
               </TouchableOpacity>
-              <View style={{ width: 16 }} />
-              <TouchableOpacity style={style.nextButton} onPress={handleNext}>
-                <Text style={style.nextButtonText}>Next</Text>
+              <TouchableOpacity
+                style={[styles.nextButton, { backgroundColor: '#4CAF50' }]}
+                onPress={handleNext}
+              >
+                <Text style={styles.nextButtonText}>
+                  {currentQuestion === flashcards.length - 1 ? 'Finish' : 'Next'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
-          <Text style={style.scoreText}>Score: {score}</Text>
+          <Text style={styles.scoreText}>Score: {score}</Text>
         </View>
       </ScrollView>
-      <View style={style.buttonContainer}>
-        <Button title={showAddForm ? "Hide Add Flashcard" : "Add Flashcard"} onPress={() => setShowAddForm(!showAddForm)} />
+      <View style={styles.buttonContainer}>
+        <Button
+          title={showAddForm ? 'Hide Add Flashcard' : 'Add Flashcard'}
+          onPress={() => setShowAddForm(!showAddForm)}
+        />
       </View>
       {showAddForm && (
-        <View style={style.addFlashcardButton}>
+        <View style={styles.addFlashcardButton}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8 }}>Add New Flashcard</Text>
           <TextInput
             placeholder="Question"
             value={newQuestion}
             onChangeText={setNewQuestion}
-            style={{ marginBottom: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8 }}
+            style={styles.input}
+            maxLength={200}
           />
           {newOptions.map((opt, idx) => (
             <TextInput
               key={idx}
               placeholder={`Option ${idx + 1}`}
               value={opt}
-              onChangeText={(text: string) => {
+              onChangeText={(text) => {
                 const updated = [...newOptions];
                 updated[idx] = text;
                 setNewOptions(updated);
               }}
-              style={{ marginBottom: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8 }}
+              style={styles.input}
+              maxLength={100}
             />
           ))}
           <TextInput
-            placeholder="Correct Answer (must match one of the options)"
+            placeholder="Correct Answer (must match one option)"
             value={newAnswer}
             onChangeText={setNewAnswer}
-            style={{ marginBottom: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8 }}
+            style={styles.input}
+            maxLength={100}
           />
-          <Button
-            title="Save Flashcard"
-            onPress={() => {
-              if (
-                newQuestion.trim() &&
-                newOptions.every(opt => opt.trim()) &&
-                newOptions.includes(newAnswer)
-              ) {
-                const newFlashcard = { question: newQuestion, options: newOptions, answer: newAnswer };
-                setFlashcards([...flashcards, newFlashcard]);
-                setNewQuestion('');
-                setNewOptions(['', '', '', '']);
-                setNewAnswer('');
-                setShowAddForm(false);
-                saveFlashcards([...flashcards, newFlashcard]);
-              } else {
-                alert('Please fill all fields and make sure the answer matches one of the options.');
-              }
-            }}
-          />
+          <Button title="Save Flashcard" onPress={handleAddFlashcard} />
           <Button title="Cancel" onPress={() => setShowAddForm(false)} color="#888" />
+        </View>
+      )}
+      {isEditing && (
+        <View style={styles.addFlashcardButton}>
+          <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 8 }}>Edit Flashcard</Text>
+          <TextInput
+            placeholder="Question"
+            value={editQuestion}
+            onChangeText={setEditQuestion}
+            style={styles.input}
+            maxLength={200}
+          />
+          {editOptions.map((opt, idx) => (
+            <TextInput
+              key={idx}
+              placeholder={`Option ${idx + 1}`}
+              value={opt}
+              onChangeText={(text) => {
+                const updated = [...editOptions];
+                updated[idx] = text;
+                setEditOptions(updated);
+              }}
+              style={styles.input}
+              maxLength={100}
+            />
+          ))}
+          <TextInput
+            placeholder="Correct Answer (must match one option)"
+            value={editAnswer}
+            onChangeText={setEditAnswer}
+            style={styles.input}
+            maxLength={100}
+          />
+          <Button title="Save Changes" onPress={saveEdit} />
+          <Button title="Cancel" onPress={() => setIsEditing(false)} color="#888" />
         </View>
       )}
     </View>
   );
-
 }
-export default Home;
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a2e',
     padding: 16,
   },
-  welcomeText: {
-    fontSize: 24,
+  header: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    paddingTop: 40,
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    color: 'white',
   },
   progressBarBg: {
     width: '100%',
@@ -403,6 +555,7 @@ const style = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: {
+    width: '100%',
     height: '100%',
     backgroundColor: '#4CAF50',
     borderRadius: 6,
@@ -413,10 +566,7 @@ const style = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
@@ -428,10 +578,8 @@ const style = StyleSheet.create({
     color: '#2c3e50',
     marginBottom: 24,
     lineHeight: 32,
-    letterSpacing: 0.5,
   },
   optionButton: {
-    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
@@ -442,19 +590,14 @@ const style = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#e0e0e0',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    transform: [{ scale: 1 }],
   },
   optionCorrect: {
     backgroundColor: '#d4edda',
     borderColor: '#28a745',
-    transform: [{ scale: 1.02 }],
   },
   optionIncorrect: {
     backgroundColor: '#f8d7da',
@@ -474,17 +617,13 @@ const style = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginVertical: 20,
-    color: 'orange',
+    color: '#e67e22',
     textAlign: 'center',
-    justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     padding: 16,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -501,61 +640,50 @@ const style = StyleSheet.create({
     paddingHorizontal: 28,
     marginHorizontal: 8,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
-  },
-  addFlashcardButton: {
-    width: '80%',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignSelf: 'center',
-    marginVertical: 10,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   nextButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   scoreText: {
     marginTop: 20,
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'orange',
+    color: '#e67e22',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   text: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 16,
     color: 'white',
-    alignContent: 'center',
+    marginVertical: 4,
   },
-  addFormContainer: {
-    margin: 20,
-    padding: 24,
-    backgroundColor: '#ffffff',
+  addFlashcardButton: {
+    width: '100%',
+    padding: 16,
+    backgroundColor: 'white',
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    marginVertical: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  input: {
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: '#fff',
   },
   buttonContainer: {
     flexDirection: 'row',
