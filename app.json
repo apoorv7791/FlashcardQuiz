@@ -4,13 +4,13 @@
     "slug": "flashcard-quiz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/QuizIcon.png",
+    "icon": "./assets/images/quizicon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "sdkVersion": "53.0.0",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/QuizIcon.png",
+      "image": "./assets/images/quizicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/QuizIcon.png",
+        "foregroundImage": "./assets/images/quizicon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.apoorvsingh.flashcardquiz"
@@ -28,10 +28,12 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/QuizIcon.png"
+      "favicon": "./assets/images/quizicon.png"
     },
     "plugins": [
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-router",
+      "expo-web-browser"
     ],
     "experiments": {},
     "extra": {

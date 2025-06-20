@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
 
@@ -10,7 +10,7 @@ interface Flashcard {
 }
 
 const WelcomeScreen: React.FC = () => {
-    const router = useRouter();
+    const navigation = useNavigation();
     const [quizResults, setQuizResults] = useState<{
         score: number;
         total: number;
@@ -65,7 +65,7 @@ const WelcomeScreen: React.FC = () => {
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.startButton]}
-                        onPress={() => router.push('/')} // Updated to '/'
+                        onPress={() => navigation.navigate('index' as never)}
                     >
                         <Text style={styles.buttonText}>Start Quiz</Text>
                     </TouchableOpacity>
