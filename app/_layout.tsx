@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect } from 'react';
-import Home from './index';
+import Home from './quiz';
 
 interface Flashcard {
     question: string;
