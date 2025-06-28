@@ -127,6 +127,16 @@ const initialFlashcards: Flashcard[] = [
   },
 ];
 
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+
+}
+
 const saveFlashcards = async (newCards: Flashcard[]) => {
   try {
     console.log('Saving flashcards:', newCards);
@@ -187,8 +197,9 @@ export default function Home() {
           setFlashcards(savedCards);
         } else {
           console.log('No saved flashcards found, using initial set.');
-          setFlashcards(initialFlashcards);
-          saveFlashcards(initialFlashcards);
+          const shuffled = shuffleArray(initialFlashcards);
+          setFlashcards(shuffled);
+          saveFlashcards(shuffled);
         }
       } catch (e) {
         console.error('Error loading flashcards:', e);
