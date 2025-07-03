@@ -186,6 +186,9 @@ export default function Home() {
       isCorrect: boolean;
     }>
   >([]);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(30); // 30 seconds per question
+  const [questionTimerId, setQuestionTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [questionTimes, setQuestionTimes] = useState<number[]>([]);
 
   useEffect(() => {
     const loadFlashcards = async () => {
@@ -222,6 +225,27 @@ export default function Home() {
       useNativeDriver: false,
     }).start();
   }, [currentQuestion, flashcards.length]);
+
+   useEffect(() => {
+    setQuestionTimeLeft(30); // Reset timer
+    if (questionTimerId) clearInterval(questionTimerId);
+    const id = setInterval(() => {
+      setQuestionTimeLeft((prevTime) => prevTime - 1);
+    }, 1000);
+    setQuestionTimerId(id);
+    return () => clearInterval(id);
+  }, [currentQuestion]);
+
+  useEffect(() => {
+    if (questionTimeLeft === 0) {
+      if (questionTimerId) clearInterval(questionTimerId);
+      setQuestionTimes((prev) => [...prev, 30]);
+      setShowResult(true);
+      setTimeout(() => {
+        handleNext();
+      }, 1000); // Show "Wrong!" for 1 second before moving on
+    }
+  }, [questionTimeLeft]);
 
   const handleOptionPress = (option: string) => {
     setSelectedOption(option);
@@ -410,6 +434,9 @@ export default function Home() {
           >
             <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>Edit</Text>
           </TouchableOpacity>
+           <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>
+            Time Left: {questionTimeLeft}s
+            </Text>
           {flashcards[currentQuestion].options.map((option, idx) => {
             const isCorrect = showResult && option === flashcards[currentQuestion].answer;
             const isSelected = selectedOption === option;
