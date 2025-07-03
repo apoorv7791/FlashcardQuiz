@@ -75,10 +75,10 @@ const WelcomeScreen: React.FC = () => {
                     {quizResults && (
                         <View style={styles.activityItem}>
                             <Text style={styles.activityText}>
-                                Last Quiz Score: {quizResults.score}/{quizResults.total}
+                                Last Quiz Score: {quizResults.score}/{totalCards} ✓
                             </Text>
                             <Text style={styles.activityDate}>
-                                Completed on: {new Date(quizResults.timestamp).toLocaleDateString()}
+                                Completed on : {new Date(quizResults.timestamp).toLocaleDateString()}
                             </Text>
                         </View>
                     )}
@@ -97,26 +97,37 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: '#5b9df9',
         alignItems: 'center',
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: 'white',
+        color: '#fff',
+        letterSpacing: 1,
     },
     subtitle: {
         fontSize: 18,
         color: 'white',
         opacity: 0.8,
         marginTop: 5,
+        fontWeight: '500',
     },
     content: {
         flex: 1,
         padding: 20,
+        justifyContent: 'flex-start',
     },
     statsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 30,
+        marginBottom: 32,
+        gap: 16,
     },
     statBox: {
         backgroundColor: 'white',
@@ -128,52 +139,57 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 6,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
     statNumber: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#5b9df9',
     },
     statLabel: {
-        fontSize: 14,
+        fontSize: 15,
         color: '#666',
-        marginTop: 5,
+        marginTop: 6,
     },
     buttonContainer: {
         gap: 15,
+        marginTop: 10,
     },
     button: {
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowColor: '#5f6caf',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 6,
     },
     startButton: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#f67280',
     },
     buttonText: {
         color: 'white',
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
+        letterSpacing: 0.5,
     },
     recentActivity: {
         marginTop: 30,
         backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        padding: 24,
+        borderRadius: 20,
+        shadowColor: '#5f6caf',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 6,
+        borderColor: '#ececec',
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 15,
         color: '#333',
@@ -181,14 +197,15 @@ const styles = StyleSheet.create({
     activityItem: {
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
-        paddingVertical: 10,
+        paddingVertical: 12,
     },
     activityText: {
         fontSize: 16,
         color: '#333',
+        fontWeight: '500',
     },
     activityDate: {
-        fontSize: 12,
+        fontSize: 14,
         color: '#666',
         marginTop: 5,
     },

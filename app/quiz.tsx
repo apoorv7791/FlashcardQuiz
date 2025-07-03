@@ -127,16 +127,6 @@ const initialFlashcards: Flashcard[] = [
   },
 ];
 
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-
-}
-
 const saveFlashcards = async (newCards: Flashcard[]) => {
   try {
     console.log('Saving flashcards:', newCards);
@@ -197,7 +187,8 @@ export default function Home() {
         if (jsonValue) {
           const savedCards: Flashcard[] = JSON.parse(jsonValue);
           console.log('Loaded flashcards from storage:', savedCards);
-          setFlashcards(savedCards);
+          const shuffled = shuffleArray(savedCards);
+          setFlashcards(shuffled);
         } else {
           console.log('No saved flashcards found, using initial set.');
           const shuffled = shuffleArray(initialFlashcards);
@@ -226,7 +217,7 @@ export default function Home() {
     }).start();
   }, [currentQuestion, flashcards.length]);
 
-   useEffect(() => {
+  useEffect(() => {
     setQuestionTimeLeft(30); // Reset timer
     if (questionTimerId) clearInterval(questionTimerId);
     const id = setInterval(() => {
@@ -247,7 +238,29 @@ export default function Home() {
     }
   }, [questionTimeLeft]);
 
+  useEffect(() => {
+    setQuestionTimeLeft(30); // Reset timer
+    if (questionTimerId) clearInterval(questionTimerId);
+    const id = setInterval(() => {
+      setQuestionTimeLeft((prevTime) => prevTime - 1);
+    }, 1000);
+    setQuestionTimerId(id);
+    return () => clearInterval(id);
+  }, [currentQuestion]);
+
+  useEffect(() => {
+    if (questionTimeLeft === 0) {
+      if (questionTimerId) clearInterval(questionTimerId);
+      setQuestionTimes((prev) => [...prev, 30]);
+      setShowResult(true);
+      setTimeout(() => {
+        handleNext();
+      }, 1000); // Show "Wrong!" for 1 second before moving on
+    }
+  }, [questionTimeLeft]);
   const handleOptionPress = (option: string) => {
+    if (questionTimerId) clearInterval(questionTimeLeft);
+    setQuestionTimes((prev) => [...prev, 30 - questionTimeLeft]);
     setSelectedOption(option);
     setShowResult(true);
     Animated.timing(fadeAnim, {
@@ -304,13 +317,14 @@ export default function Home() {
       !editOptions.some((opt, i) => editOptions.indexOf(opt) !== i && opt.trim())
     ) {
       const updated = [...flashcards];
+      const shuffled = shuffleArray(updated);
       updated[editIndex!] = {
         question: editQuestion,
         options: editOptions,
         answer: editAnswer,
       };
-      setFlashcards(updated);
-      saveFlashcards(updated);
+      setFlashcards(shuffled);
+      saveFlashcards(shuffled);
       setIsEditing(false);
       setEditIndex(null);
       setEditQuestion('');
@@ -337,8 +351,9 @@ export default function Home() {
         answer: newAnswer,
       };
       const updatedFlashcards = [...flashcards, newFlashcard];
-      setFlashcards(updatedFlashcards);
-      saveFlashcards(updatedFlashcards);
+      const shuffled = shuffleArray(updatedFlashcards);
+      setFlashcards(shuffled);
+      saveFlashcards(shuffled);
       setNewQuestion('');
       setNewOptions(['', '', '', '']);
       setNewAnswer('');
@@ -352,6 +367,9 @@ export default function Home() {
   };
 
   const handleRestart = () => {
+    // Shuffle flashcards on restart for a new order
+    const shuffled = shuffleArray(flashcards);
+    setFlashcards(shuffled);
     setCurrentQuestion(0);
     setScore(0);
     setSelectedOption(null);
@@ -434,9 +452,6 @@ export default function Home() {
           >
             <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>Edit</Text>
           </TouchableOpacity>
-           <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>
-            Time Left: {questionTimeLeft}s
-            </Text>
           {flashcards[currentQuestion].options.map((option, idx) => {
             const isCorrect = showResult && option === flashcards[currentQuestion].answer;
             const isSelected = selectedOption === option;
@@ -601,14 +616,16 @@ const styles = StyleSheet.create({
   questionContainer: {
     width: '100%',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#5f6caf',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
-    marginBottom: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#ececec',
   },
   question: {
     fontSize: 24,
@@ -620,18 +637,18 @@ const styles = StyleSheet.create({
   optionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginVertical: 8,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: 24,
+    marginVertical: 10,
+    backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: '#5f6caf',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 8,
   },
   optionCorrect: {
     backgroundColor: '#d4edda',
