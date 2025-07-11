@@ -137,12 +137,13 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-const shuffleFlashcardOptions = (flashcards: Flashcard[]) => {
-  return flashcards.map((flashcard) => ({
-    ...flashcard,
-    options: shuffleArray(flashcard.options),
-  }));
+const shuffleflashOptions = (flashcards: Flashcard[]) => {
+  return flashcards.map((flashcards) => ({
+    ...flashcards,
+    options: shuffleArray(flashcards.options),
+  }))
 }
+
 const saveFlashcards = async (newCards: Flashcard[]) => {
   try {
     console.log('Saving flashcards:', newCards);
@@ -203,16 +204,17 @@ export default function Home() {
         if (jsonValue) {
           const savedCards: Flashcard[] = JSON.parse(jsonValue);
           console.log('Loaded flashcards from storage:', savedCards);
-          const shuffled = shuffleFlashcardOptions(savedCards);
+          const shuffled = shuffleArray(savedCards);
           setFlashcards(shuffled);
         } else {
           console.log('No saved flashcards found, using initial set.');
-          const shuffled = shuffleArray(initialFlashcards);
+          const shuffled = shuffleflashOptions(initialFlashcards);
           setFlashcards(shuffled);
           saveFlashcards(shuffled);
         }
       } catch (e) {
         console.error('Error loading flashcards:', e);
+        const shuffled = shuffleflashOptions(initialFlashcards);
         setFlashcards(initialFlashcards);
       }
     };
@@ -317,7 +319,7 @@ export default function Home() {
         options: editOptions,
         answer: editAnswer,
       };
-      const shuffled = shuffleArray(updated); // Shuffle the updated flashcards
+      const shuffled = shuffleArray(updated);
       setFlashcards(shuffled);
       saveFlashcards(shuffled);
       setIsEditing(false);
