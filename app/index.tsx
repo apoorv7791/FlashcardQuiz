@@ -2,6 +2,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Flashcard {
     question: string;
@@ -49,27 +52,57 @@ const WelcomeScreen: React.FC = () => {
         loadTotalCards();
     }, []);
 
+    const headerOpacity = useSharedValue(0);
+    const buttonTranslateY = useSharedValue(30);
+
+    const headerAniamtedStyle = useAnimatedStyle(() => ({
+        opacity: headerOpacity.value,
+    }))
+    const buttonAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: headerOpacity.value, // Reuse the opacity for a fade-in effect
+        transform: [{ translateY: buttonTranslateY.value }],
+    }));
+
+    useEffect(() => {
+        headerOpacity.value = withTiming(1, { duration: 1000, easing: Easing.ease });
+        buttonTranslateY.value = withTiming(0, { duration: 1000, easing: Easing.ease });
+    })
+
     return (
         <View style={styles.container}>
-            <View style={[styles.header, { marginTop: 40 }]}>
-                <Text style={styles.title}>Flashcard Quiz</Text>
-                <Text style={styles.subtitle}>Test your knowledge!</Text>
-            </View>
+            <Animated.View style={[styles.header, { marginTop: 40 }, headerAniamtedStyle]}>
+                <LinearGradient
+                    colors={["#5b9df9", "#5b9df9"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.header}
+                >
+                    <Text style={styles.title}>Flashcard Quiz</Text>
+                    <Text style={styles.subtitle}>Test your knowledge!</Text>
+                </LinearGradient>
+            </Animated.View>
             <View style={styles.content}>
                 <View style={styles.statsContainer}>
                     <View style={styles.statBox}>
                         <Text style={styles.statNumber}>{totalCards}</Text>
                         <Text style={styles.statLabel}>Total Cards</Text>
                     </View>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statNumber}>20s</Text>
+                        <Text style={styles.statLabel}>Time Limit</Text>
+                    </View>
                 </View>
-                <View style={styles.buttonContainer}>
+                <Animated.View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.startButton]}
-                        onPress={() => router.push('/quiz')}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/quiz')
+                        }}
                     >
                         <Text style={styles.buttonText}>Start Quiz</Text>
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
                 <View style={styles.recentActivity}>
                     <Text style={styles.sectionTitle}>Recent Activity</Text>
                     {quizResults && (
@@ -91,16 +124,15 @@ const WelcomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f8f9fa', // A softer, off-white background
     },
     header: {
         padding: 20,
-        backgroundColor: '#5b9df9',
         alignItems: 'center',
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowColor: '#667eea',
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
         elevation: 8,
@@ -114,9 +146,9 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 18,
         color: 'white',
-        opacity: 0.8,
+        opacity: 0.9,
         marginTop: 5,
-        fontWeight: '500',
+        fontWeight: '400',
     },
     content: {
         flex: 1,
