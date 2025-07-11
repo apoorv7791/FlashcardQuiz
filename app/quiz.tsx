@@ -12,121 +12,137 @@ interface Flashcard {
 const initialFlashcards: Flashcard[] = [
   {
     question: "What is the capital of France?",
-    options: ["Paris", "London", "Berlin", "Madrid"],
+    options: shuffleArray(
+      ["Paris", "London", "Berlin", "Madrid"]),
     answer: "Paris",
   },
   {
     question: "What is a linked list?",
-    options: [
+    options: shuffleArray([
       "A data structure consisting of nodes, each containing data and a reference to the next node.",
       "A tree with two children per node",
       "A collection of key-value pairs",
       "A FIFO data structure",
-    ],
+    ]),
     answer: "A data structure consisting of nodes, each containing data and a reference to the next node.",
   },
   {
     question: "What is a stack?",
-    options: [
+    options: shuffleArray([
       "A data structure that follows Last-In-First-Out (LIFO) principle.",
       "A data structure that follows First-In-First-Out (FIFO) principle.",
       "A graph",
       "A hash table",
-    ],
+    ]),
     answer: "A data structure that follows Last-In-First-Out (LIFO) principle.",
   },
   {
     question: "What is a queue?",
-    options: [
+    options: shuffleArray([
       "A data structure that follows First-In-First-Out (FIFO) principle.",
       "A data structure that follows Last-In-First-Out (LIFO) principle.",
       "A tree",
       "A linked list",
-    ],
+    ]),
     answer: "A data structure that follows First-In-First-Out (FIFO) principle.",
   },
   {
     question: "What is a binary search tree?",
-    options: [
+    options: shuffleArray([
       "A tree data structure in which each node has at most two children, and left < root < right.",
       "A hash table",
       "A queue",
       "A graph",
-    ],
+    ]),
     answer: "A tree data structure in which each node has at most two children, and left < root < right.",
   },
   {
     question: "What is a graph?",
-    options: [
+    options: shuffleArray([
       "A collection of nodes (vertices) and edges connecting pairs of nodes.",
       "A stack",
       "A queue",
       "A binary tree",
-    ],
+    ]),
     answer: "A collection of nodes (vertices) and edges connecting pairs of nodes.",
   },
   {
     question: "What is a hash table?",
-    options: [
+    options: shuffleArray([
       "A data structure that maps keys to values for highly efficient lookup.",
       "A FIFO data structure",
       "A stack",
       "A tree",
-    ],
+    ]),
     answer: "A data structure that maps keys to values for highly efficient lookup.",
   },
   {
     question: "What is an element?",
-    options: [
+    options: shuffleArray([
       "An element is a basic unit of a data structure.",
       "A queue",
       "An array",
       "A table",
-    ],
+    ]),
     answer: "An element is a basic unit of a data structure.",
   },
   {
     question: "What are the use cases of the technique BackTracking?",
-    options: [
+    options: shuffleArray([
       "Solving puzzles and games (e.g., Sudoku, crossword puzzles).",
       "Generating all possible solutions to a problem (e.g., permutations, combinations).",
       "Undoing previous choices when a solution path fails (e.g., recursive backtracking in mazes).",
       "Exploring all configurations in constraint satisfaction problems (e.g., scheduling, resource allocation).",
-    ],
+    ]),
     answer: "Solving puzzles and games (e.g., Sudoku, crossword puzzles).",
   },
   {
     question: "What is an Operating System?",
-    options: [
+    options: shuffleArray([
       "An operating system is a program that manages computer hardware and software resources, providing common services for computer programs.",
       "A System that is responsible for managing computer hardware and software resources, providing common services for computer programs.",
       "A System that works on the basis of managing computer hardware and software resources, providing common services for computer programs.",
       "An Operating system is an intermediary between user of a computer and computer hardware.",
-    ],
+    ]),
     answer: "An operating system is a program that manages computer hardware and software resources, providing common services for computer programs.",
   },
   {
     question: "What is nuclear physics?",
-    options: [
+    options: shuffleArray([
       "The study of the structure and behavior of the nucleus of an atom.",
       "The study of the behavior of subatomic particles.",
       "The study of the behavior of electrons.",
       "The study of the behavior of protons.",
-    ],
+    ]),
     answer: "The study of the structure and behavior of the nucleus of an atom.",
   },
   {
     question: "What is quantum physics?",
-    options: [
+    options: shuffleArray([
       "The study of the behavior of subatomic particles.",
       "The study of the behavior of electrons.",
       "The study of the behavior of protons.",
       "The study of the behavior of electrons and protons.",
-    ],
+    ]),
     answer: "The study of the behavior of subatomic particles.",
   },
 ];
 
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const shuffleFlashcardOptions = (flashcards: Flashcard[]) => {
+  return flashcards.map((flashcard) => ({
+    ...flashcard,
+    options: shuffleArray(flashcard.options),
+  }));
+}
 const saveFlashcards = async (newCards: Flashcard[]) => {
   try {
     console.log('Saving flashcards:', newCards);
@@ -179,7 +195,7 @@ export default function Home() {
   const [questionTimeLeft, setQuestionTimeLeft] = useState(30); // 30 seconds per question
   const [questionTimerId, setQuestionTimerId] = useState<NodeJS.Timeout | null>(null);
   const [questionTimes, setQuestionTimes] = useState<number[]>([]);
-
+  const [timeLeft, setTimeLeft] = useState(30);
   useEffect(() => {
     const loadFlashcards = async () => {
       try {
@@ -187,7 +203,7 @@ export default function Home() {
         if (jsonValue) {
           const savedCards: Flashcard[] = JSON.parse(jsonValue);
           console.log('Loaded flashcards from storage:', savedCards);
-          const shuffled = shuffleArray(savedCards);
+          const shuffled = shuffleFlashcardOptions(savedCards);
           setFlashcards(shuffled);
         } else {
           console.log('No saved flashcards found, using initial set.');
@@ -218,7 +234,7 @@ export default function Home() {
   }, [currentQuestion, flashcards.length]);
 
   useEffect(() => {
-    setQuestionTimeLeft(30); // Reset timer
+    setQuestionTimeLeft(20); // Reset timer
     if (questionTimerId) clearInterval(questionTimerId);
     const id = setInterval(() => {
       setQuestionTimeLeft((prevTime) => prevTime - 1);
@@ -230,28 +246,7 @@ export default function Home() {
   useEffect(() => {
     if (questionTimeLeft === 0) {
       if (questionTimerId) clearInterval(questionTimerId);
-      setQuestionTimes((prev) => [...prev, 30]);
-      setShowResult(true);
-      setTimeout(() => {
-        handleNext();
-      }, 1000); // Show "Wrong!" for 1 second before moving on
-    }
-  }, [questionTimeLeft]);
-
-  useEffect(() => {
-    setQuestionTimeLeft(30); // Reset timer
-    if (questionTimerId) clearInterval(questionTimerId);
-    const id = setInterval(() => {
-      setQuestionTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
-    setQuestionTimerId(id);
-    return () => clearInterval(id);
-  }, [currentQuestion]);
-
-  useEffect(() => {
-    if (questionTimeLeft === 0) {
-      if (questionTimerId) clearInterval(questionTimerId);
-      setQuestionTimes((prev) => [...prev, 30]);
+      setQuestionTimes((prev) => [...prev, 20]);
       setShowResult(true);
       setTimeout(() => {
         handleNext();
@@ -260,7 +255,7 @@ export default function Home() {
   }, [questionTimeLeft]);
   const handleOptionPress = (option: string) => {
     if (questionTimerId) clearInterval(questionTimeLeft);
-    setQuestionTimes((prev) => [...prev, 30 - questionTimeLeft]);
+    setQuestionTimes((prev) => [...prev, 20 - questionTimeLeft]);
     setSelectedOption(option);
     setShowResult(true);
     Animated.timing(fadeAnim, {
@@ -317,12 +312,12 @@ export default function Home() {
       !editOptions.some((opt, i) => editOptions.indexOf(opt) !== i && opt.trim())
     ) {
       const updated = [...flashcards];
-      const shuffled = shuffleArray(updated);
       updated[editIndex!] = {
         question: editQuestion,
         options: editOptions,
         answer: editAnswer,
       };
+      const shuffled = shuffleArray(updated); // Shuffle the updated flashcards
       setFlashcards(shuffled);
       saveFlashcards(shuffled);
       setIsEditing(false);
@@ -402,6 +397,15 @@ export default function Home() {
               </View>
             ))}
           </ScrollView>
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <Text style={[styles.text, { fontSize: 20, marginBottom: 20 }]}>
+              Time: {timeLeft} seconds
+            </Text>
+            <Text style={[styles.text, { fontSize: 20, marginBottom: 20 }]}>
+              current Score: {score}
+              {score === flashcards.length ? 'You Won!' : 'You Lost!'}
+            </Text>
+          </View>
           <TouchableOpacity
             style={[styles.nextButton, { backgroundColor: '#5b9df9', paddingHorizontal: 20 }]}
             onPress={handleRestart}
@@ -452,6 +456,9 @@ export default function Home() {
           >
             <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>Edit</Text>
           </TouchableOpacity>
+          <Text style={{ color: '#5b9df9', fontWeight: 'bold', fontSize: 16 }}>
+            Time Left: {questionTimeLeft}s
+          </Text>
           {flashcards[currentQuestion].options.map((option, idx) => {
             const isCorrect = showResult && option === flashcards[currentQuestion].answer;
             const isSelected = selectedOption === option;
