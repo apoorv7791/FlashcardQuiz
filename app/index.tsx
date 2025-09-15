@@ -1,16 +1,25 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    Easing,
+    FadeIn,
+    SlideInDown,
+    SlideInRight,
+    SlideInLeft
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getDocs, onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { AIService } from '../services/aiService';
 
-interface Flashcard {
-    question: string;
-    options: string[];
-    answer: string;
-}
+const { width, height } = Dimensions.get('window');
 
 const WelcomeScreen: React.FC = () => {
     const router = useRouter();
@@ -32,24 +41,36 @@ const WelcomeScreen: React.FC = () => {
         }
     };
 
-    const loadTotalCards = async () => {
-        try {
-            const flashcardsData = await AsyncStorage.getItem('@flashcards_key');
-            if (flashcardsData) {
-                const flashcards: Flashcard[] = JSON.parse(flashcardsData);
-                setTotalCards(flashcards.length);
-            } else {
-                setTotalCards(12); // Default to initialFlashcards length
-            }
-        } catch (e) {
-            console.error('Error loading flashcards:', e);
-            setTotalCards(12);
-        }
-    };
-
+    // Subscribe to real-time updates for flashcards
     useEffect(() => {
         loadQuizResults();
+
+        // Initial load
+        const loadTotalCards = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'Flashcards-quiz'));
+                const flashcardsData = querySnapshot.docs.map((doc) => doc.data());
+                setTotalCards(flashcardsData.length);
+            } catch (e) {
+                console.error('Error loading flashcards:', e);
+                setTotalCards(0);
+            }
+        };
+
         loadTotalCards();
+
+        // Set up real-time listener
+        const flashcardsRef = collection(db, 'Flashcards-quiz');
+        const unsubscribe = onSnapshot(flashcardsRef, (snapshot) => {
+            const updatedCount = snapshot.docs.length;
+            setTotalCards(updatedCount);
+            console.log('Updated flashcard count:', updatedCount);
+        }, (error) => {
+            console.error('Error listening to flashcards updates:', error);
+        });
+
+        // Clean up the listener when component unmounts
+        return () => unsubscribe();
     }, []);
 
     const headerOpacity = useSharedValue(0);
@@ -70,53 +91,138 @@ const WelcomeScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Animated.View style={[styles.header, { marginTop: 40 }, headerAniamtedStyle]}>
-                <LinearGradient
-                    colors={["#5b9df9", "#5b9df9"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.header}
+            <Animated.View entering={FadeIn.duration(1000)}>
+                <Animated.View
+                    style={[styles.header, headerAniamtedStyle]}
                 >
-                    <Text style={styles.title}>Flashcard Quiz</Text>
-                    <Text style={styles.subtitle}>Test your knowledge!</Text>
-                </LinearGradient>
-            </Animated.View>
-            <View style={styles.content}>
-                <View style={styles.statsContainer}>
-                    <View style={styles.statBox}>
-                        <Text style={styles.statNumber}>{totalCards}</Text>
-                        <Text style={styles.statLabel}>Total Cards</Text>
-                    </View>
-                    <View style={styles.statBox}>
-                        <Text style={styles.statNumber}>20s</Text>
-                        <Text style={styles.statLabel}>Time Limit</Text>
-                    </View>
-                </View>
-                <Animated.View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.startButton]}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push('/quiz')
-                        }}
+                    <LinearGradient
+                        colors={['#5b9df9', '#3b82f6']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.header}
                     >
-                        <Text style={styles.buttonText}>Start Quiz</Text>
-                    </TouchableOpacity>
-                </Animated.View>
-                <View style={styles.recentActivity}>
-                    <Text style={styles.sectionTitle}>Recent Activity</Text>
-                    {quizResults && (
-                        <View style={styles.activityItem}>
-                            <Text style={styles.activityText}>
-                                Last Quiz Score: {quizResults.score}/{totalCards} ✓
-                            </Text>
-                            <Text style={styles.activityDate}>
-                                Completed on : {new Date(quizResults.timestamp).toLocaleDateString()}
-                            </Text>
+                        <View style={styles.headerContent}>
+                            <Animated.Text
+                                style={styles.title}
+                                entering={SlideInDown.duration(800).delay(100)}
+                            >
+                                Flashcard Quiz
+                            </Animated.Text>
+                            <Animated.Text
+                                style={styles.subtitle}
+                                entering={SlideInDown.duration(800).delay(200)}
+                            >
+                                Test your knowledge!
+                            </Animated.Text>
                         </View>
-                    )}
+                    </LinearGradient>
+                </Animated.View>
+            </Animated.View>
+
+            <Animated.ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                entering={FadeIn.delay(300)}
+            >
+                <View style={styles.cardsContainer}>
+                    <Animated.View
+                        style={[styles.card, styles.statsCard]}
+                        entering={SlideInRight.duration(600).delay(200)}
+                    >
+                        <View style={styles.statItem}>
+                            <View style={styles.statIcon}>
+                                <FontAwesome5 name="layer-group" size={24} color="#5b9df9" />
+                            </View>
+                            <View>
+                                <Text style={styles.statNumber}>{totalCards}</Text>
+                                <Text style={styles.statLabel}>Total Cards</Text>
+                            </View>
+                        </View>
+                        <View style={styles.statItem}>
+                            <View style={styles.statIcon}>
+                                <MaterialIcons name="timer" size={24} color="#5b9df9" />
+                            </View>
+                            <View>
+                                <Text style={styles.statNumber}>30s</Text>
+                                <Text style={styles.statLabel}>Per Question</Text>
+                            </View>
+                        </View>
+                    </Animated.View>
+
+                    <Animated.View
+                        style={[styles.card, styles.startCard]}
+                        entering={SlideInLeft.duration(600).delay(300)}
+                    >
+                        <View style={styles.startCardContent}>
+                            <Text style={styles.startCardTitle}>Ready to Test Yourself?</Text>
+                            <Text style={styles.startCardText}>Challenge yourself with our interactive flashcards and improve your knowledge.</Text>
+                            <TouchableOpacity
+                                style={styles.startButton}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    router.push('/quiz');
+                                }}
+                                activeOpacity={0.9}
+                            >
+                                <Text style={styles.startButtonText}>Start Quiz</Text>
+                                <MaterialIcons name="arrow-forward" size={20} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+
+                    {/* Always show Recent Activity card */}
+                    <Animated.View
+                        style={[styles.card, styles.activityCard]}
+                        entering={SlideInRight.duration(600).delay(400)}
+                    >
+                        <Text style={styles.sectionTitle}>Recent Activity</Text>
+                        <View style={styles.activityContent}>
+                            <View style={styles.scoreCircle}>
+                                <Text style={styles.scoreText}>
+                                    {quizResults ? Math.round((quizResults.score / totalCards) * 100) : 0}%
+                                </Text>
+                            </View>
+                            <View style={styles.activityDetails}>
+                                <Text style={styles.activityText}>
+                                    {quizResults ? `You scored ${quizResults.score} out of ${totalCards}` : 'No recent activity yet.'}
+                                </Text>
+                                <Text style={styles.activityDate}>
+                                    {quizResults ? new Date().toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                    }) : ''}
+                                </Text>
+                            </View>
+                        </View>
+                    </Animated.View>
+
+                    {/* AI Generator Card - Add this new section */}
+                    <Animated.View
+                        style={[styles.card, styles.aiCard]}
+                        entering={SlideInLeft.duration(600).delay(500)}
+                    >
+                        <View style={styles.aiCardContent}>
+                            <MaterialIcons name="psychology" size={32} color="#9C27B0" />
+                            <Text style={styles.aiCardTitle}>AI Question Generator</Text>
+                            <Text style={styles.aiCardText}>
+                                Generate new questions using AI based on topics or content
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.aiButton}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    router.push('/ai-generator');
+                                }}
+                                activeOpacity={0.9}
+                            >
+                                <Text style={styles.aiButtonText}>Generate Questions</Text>
+                                <MaterialIcons name="auto-awesome" size={20} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
                 </View>
-            </View>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -124,122 +230,219 @@ const WelcomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa', // A softer, off-white background
+        backgroundColor: '#f0f4f8',
     },
     header: {
-        padding: 20,
+        padding: 30,
+        paddingTop: 60,
+        paddingBottom: 40,
         alignItems: 'center',
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 8,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        shadowColor: '#5b9df9',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    headerContent: {
+        alignItems: 'center',
     },
     title: {
-        fontSize: 32,
-        fontWeight: 'bold',
+        fontSize: 36,
+        fontWeight: '800',
         color: '#fff',
-        letterSpacing: 1,
+        marginBottom: 8,
+        fontFamily: 'System',
+        letterSpacing: 0.5,
     },
     subtitle: {
         fontSize: 18,
-        color: 'white',
-        opacity: 0.9,
-        marginTop: 5,
-        fontWeight: '400',
+        color: 'rgba(255, 255, 255, 0.9)',
+        marginTop: 8,
+        fontFamily: 'System',
+        fontWeight: '500',
     },
     content: {
         flex: 1,
         padding: 20,
-        justifyContent: 'flex-start',
+        paddingBottom: 40,
     },
-    statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginBottom: 32,
-        gap: 16,
+    cardsContainer: {
+        marginTop: -30,
+        marginBottom: 20,
     },
-    statBox: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 12,
-        alignItems: 'center',
-        width: '45%',
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 24,
+        marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 6,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    statsCard: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 20,
+    },
+    statItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    statIcon: {
+        backgroundColor: 'rgba(91, 157, 249, 0.15)',
+        width: 50,
+        height: 50,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
     },
     statNumber: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#5b9df9',
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#1a1a1a',
+        marginBottom: 2,
     },
     statLabel: {
-        fontSize: 15,
+        fontSize: 14,
         color: '#666',
-        marginTop: 6,
+        fontWeight: '500',
     },
-    buttonContainer: {
-        gap: 15,
-        marginTop: 10,
+    startCard: {
+        backgroundColor: '#5b9df9',
+        padding: 0,
+        overflow: 'hidden',
     },
-    button: {
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        shadowColor: '#5f6caf',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 6,
+    startCardContent: {
+        padding: 24,
+        position: 'relative',
+        zIndex: 2,
+    },
+    startCardTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#fff',
+        marginBottom: 12,
+    },
+    startCardText: {
+        fontSize: 15,
+        color: 'rgba(255, 255, 255, 0.9)',
+        marginBottom: 24,
+        lineHeight: 22,
     },
     startButton: {
-        backgroundColor: '#f67280',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-        letterSpacing: 0.5,
-    },
-    recentActivity: {
-        marginTop: 30,
-        backgroundColor: 'white',
-        padding: 24,
-        borderRadius: 20,
-        shadowColor: '#5f6caf',
+        backgroundColor: '#fff',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
+        shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 6,
-        borderColor: '#ececec',
+        elevation: 4,
+    },
+    startButtonText: {
+        color: '#5b9df9',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    activityCard: {
+        padding: 0,
     },
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#333',
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1a1a1a',
+        marginBottom: 16,
+        paddingHorizontal: 24,
+        paddingTop: 24,
     },
-    activityItem: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingVertical: 12,
+    activityContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        paddingTop: 0,
+    },
+    scoreCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#f0f7ff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 20,
+        borderWidth: 3,
+        borderColor: '#e1f0ff',
+    },
+    scoreText: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#5b9df9',
+    },
+    activityDetails: {
+        flex: 1,
     },
     activityText: {
         fontSize: 16,
         color: '#333',
+        marginBottom: 4,
         fontWeight: '500',
     },
     activityDate: {
         fontSize: 14,
-        color: '#666',
-        marginTop: 5,
+        color: '#888',
+        fontWeight: '500',
+    },
+    aiCard: {
+        backgroundColor: '#f3e5f5',
+        borderWidth: 2,
+        borderColor: '#e1bee7',
+    },
+    aiCardContent: {
+        alignItems: 'center',
+        padding: 20,
+    },
+    aiCardTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#7b1fa2',
+        marginTop: 12,
+        marginBottom: 8,
+    },
+    aiCardText: {
+        fontSize: 14,
+        color: '#6a1b9a',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    aiButton: {
+        backgroundColor: '#9C27B0',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minWidth: 200,
+        shadowColor: '#9C27B0',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    aiButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

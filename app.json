@@ -7,7 +7,7 @@
     "icon": "./assets/images/quizicon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "sdkVersion": "53.0.0",
+    "sdkVersion": "54.0.0",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/quizicon.png",
@@ -33,7 +33,8 @@
     "plugins": [
       "expo-splash-screen",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "experiments": {},
     "extra": {

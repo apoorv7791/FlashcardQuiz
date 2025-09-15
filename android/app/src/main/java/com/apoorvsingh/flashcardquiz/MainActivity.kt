@@ -1,4 +1,4 @@
-package com.anonymous.flashcardquiz
+package com.apoorvsingh.flashcardquiz
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

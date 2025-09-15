@@ -1,4 +1,4 @@
-package com.anonymous.flashcardquiz
+package com.apoorvsingh.flashcardquiz
 
 import android.app.Application
 import android.content.res.Configuration
